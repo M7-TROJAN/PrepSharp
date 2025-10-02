@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>aspnet-PrepSharp.Web-c94ff1bc-7cf6-4c19-9948-263dbc27090b</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+	<PackageReference Include="AutoMapper" Version="13.0.1" />
+	<PackageReference Include="Hangfire" Version="1.8.18" />
+	<PackageReference Include="Microsoft.AspNetCore.Authentication.Facebook" Version="8.0.17" />
+	<PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="8.0.17" />
+    <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="8.0.19" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.19" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="8.0.19" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.11" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.19" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.19" />
+	<PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.7" />
+	<PackageReference Include="System.Linq.Dynamic.Core" Version="1.6.0.2" />
+	<PackageReference Include="UoN.ExpressiveAnnotations.NetCore" Version="1.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Core\ViewModels\" />
+  </ItemGroup>
+
+</Project>
