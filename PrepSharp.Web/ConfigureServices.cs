@@ -1,12 +1,14 @@
 ﻿using Hangfire;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
-using PrepSharp.Domain.Consts;
+using PrepSharp.Consts;
 using PrepSharp.Web.Core;
 using PrepSharp.Web.Helpers;
 using PrepSharp.Web.Services;
 using System.Reflection;
+using System.Security.Claims;
 using UoN.ExpressiveAnnotations.NetCore.DependencyInjection;
 
 namespace PrepSharp.Web;
@@ -78,8 +80,8 @@ public static class ConfigureServices
                 options.Fields.Add("name");
 
                 // يضمن اننا ناخد الإيميل (أحياناً بيبقى مخفي)
-                //options.ClaimActions.MapJsonKey(ClaimTypes.Email, "email");
-                //options.ClaimActions.MapJsonKey(ClaimTypes.Name, "name");
+                options.ClaimActions.MapJsonKey(ClaimTypes.Email, "email");
+                options.ClaimActions.MapJsonKey(ClaimTypes.Name, "name");
 
                 //  التعامل مع فشل المصادقة (زي لما المستخدم يعمل Cancel)
                 options.Events.OnRemoteFailure = context =>
@@ -148,7 +150,7 @@ public static class ConfigureServices
         builder.Services.AddHangfireServer();
 
 
-        // Add Authorization policy for AdminsOnly (Admins and SuperAdmins)
+        // Add Authorization policy for AdminsOnly
         services.Configure<AuthorizationOptions>(options =>
         options.AddPolicy("AdminOnly", policy =>
         {

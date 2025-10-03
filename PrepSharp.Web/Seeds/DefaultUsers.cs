@@ -1,4 +1,4 @@
-﻿using PrepSharp.Domain.Consts;
+﻿using PrepSharp.Consts;
 
 namespace PrepSharp.Web.Seeds
 {
@@ -15,7 +15,7 @@ namespace PrepSharp.Web.Seeds
                 LastName = "Mattar",
                 EmailConfirmed = true,
                 PhoneNumberConfirmed = true,
-                DateOfBirth = new DateTime(1998, 3, 3),
+                BirthDate = new DateOnly(1998, 3, 3),
             };
 
             // first check if the admin user already exists

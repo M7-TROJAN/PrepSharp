@@ -7,12 +7,126 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
+using PrepSharp.Consts;
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Encodings.Web;
 
 namespace PrepSharp.Web.Areas.Identity.Pages.Account
+{
+    [AllowAnonymous]
+    public class ExternalLoginModel : PageModel
+    {
+        private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly ILogger<ExternalLoginModel> _logger;
+
+        public ExternalLoginModel(
+            SignInManager<ApplicationUser> signInManager,
+            UserManager<ApplicationUser> userManager,
+            ILogger<ExternalLoginModel> logger)
+        {
+            _signInManager = signInManager;
+            _userManager = userManager;
+            _logger = logger;
+        }
+
+        public IActionResult OnGet() => RedirectToPage("./Login");
+
+        public IActionResult OnPost(string provider, string returnUrl = null)
+        {
+            var redirectUrl = Url.Page("./ExternalLogin", pageHandler: "Callback", values: new { returnUrl });
+            var properties = _signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
+            return new ChallengeResult(provider, properties);
+        }
+
+        public async Task<IActionResult> OnGetCallbackAsync(string returnUrl = null, string remoteError = null)
+        {
+            returnUrl ??= Url.Content("~/");
+
+            if (!string.IsNullOrEmpty(remoteError))
+            {
+                _logger.LogWarning("External login failed: {Error}", remoteError);
+                TempData["ExternalLoginError"] = "Login was cancelled or failed. Please try again.";
+                return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
+            }
+
+            var info = await _signInManager.GetExternalLoginInfoAsync();
+            if (info == null)
+            {
+                _logger.LogWarning("External login info is null.");
+                TempData["ExternalLoginError"] = "Unable to load external login information.";
+                return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
+            }
+
+            // Check if the user already exists with this external login
+            var result = await _signInManager.ExternalLoginSignInAsync(
+                info.LoginProvider, info.ProviderKey, isPersistent: false, bypassTwoFactor: true);
+
+            if (result.Succeeded)
+            {
+                _logger.LogInformation("{Name} logged in with {LoginProvider} provider.",
+                    info.Principal.Identity.Name, info.LoginProvider);
+
+                return LocalRedirect(returnUrl);
+            }
+
+            // if we reach here that means the user is use the external login provider for the first time and we need to register them
+
+            // New user - register automatically
+            var email = info.Principal.FindFirstValue(ClaimTypes.Email);
+            var fullName = info.Principal.FindFirstValue(ClaimTypes.Name)
+                ?? info.Principal.FindFirstValue(ClaimTypes.GivenName)
+                ?? info.Principal.FindFirstValue(ClaimTypes.Surname)
+                ?? "User";
+
+            var user = CreateUser(email, fullName);
+
+            var createResult = await _userManager.CreateAsync(user);
+
+            if (createResult.Succeeded)
+            {
+                await _userManager.AddToRoleAsync(user, AppRoles.User);
+                await _userManager.AddLoginAsync(user, info);
+                await _signInManager.SignInAsync(user, isPersistent: false);
+                _logger.LogInformation($"User {user.UserName} created an account using {info.LoginProvider} provider.");
+                return LocalRedirect(returnUrl);
+            }
+
+            foreach (var error in createResult.Errors)
+            {
+                ModelState.AddModelError(string.Empty, error.Description);
+            }
+
+            return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
+        }
+
+        private ApplicationUser CreateUser(string email, string fullName)
+        {
+            return new ApplicationUser
+            {
+                Email = email,
+                UserName = email, // user can change this later in Account Settings
+                EmailConfirmed = true, // because we trust Google, facebook to confirm the email
+                FirstName = fullName.Split(' ').FirstOrDefault(), 
+                LastName = fullName.Split(' ').Skip(1).FirstOrDefault() ?? ""
+            };
+        }
+    }
+}
+
+
+/*
+#nullable disable
+
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.WebUtilities;
+using System.Text;
+using System.Text.Encodings.Web;
+
+namespace LitraLand.Web.Areas.Identity.Pages.Account
 {
     [AllowAnonymous]
     public class ExternalLoginModel : PageModel
@@ -39,45 +153,25 @@ namespace PrepSharp.Web.Areas.Identity.Pages.Account
             _emailSender = emailSender;
         }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         [BindProperty]
         public InputModel Input { get; set; }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         public string ProviderDisplayName { get; set; }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         public string ReturnUrl { get; set; }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         [TempData]
         public string ErrorMessage { get; set; }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         public class InputModel
         {
-            /// <summary>
-            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-            ///     directly from your code. This API may change or be removed in future releases.
-            /// </summary>
             [Required]
             [EmailAddress]
             public string Email { get; set; }
+
+            [Required]
+            [Display(Name = "Full Name")]
+            public string FullName { get; set; }
         }
 
         public IActionResult OnGet() => RedirectToPage("./Login");
@@ -125,7 +219,8 @@ namespace PrepSharp.Web.Areas.Identity.Pages.Account
                 {
                     Input = new InputModel
                     {
-                        Email = info.Principal.FindFirstValue(ClaimTypes.Email)
+                        Email = info.Principal.FindFirstValue(ClaimTypes.Email),
+                        FullName = info.Principal.FindFirstValue(ClaimTypes.Name) ?? info.Principal.FindFirstValue(ClaimTypes.GivenName) ?? info.Principal.FindFirstValue(ClaimTypes.Surname)
                     };
                 }
                 return Page();
@@ -193,16 +288,14 @@ namespace PrepSharp.Web.Areas.Identity.Pages.Account
 
         private ApplicationUser CreateUser()
         {
-            try
+            var user = new ApplicationUser
             {
-                return Activator.CreateInstance<ApplicationUser>();
-            }
-            catch
-            {
-                throw new InvalidOperationException($"Can't create an instance of '{nameof(ApplicationUser)}'. " +
-                    $"Ensure that '{nameof(ApplicationUser)}' is not an abstract class and has a parameterless constructor, or alternatively " +
-                    $"override the external login page in /Areas/Identity/Pages/Account/ExternalLogin.cshtml");
-            }
+                Email = Input.Email,
+                FullName = Input.FullName,
+                AppllicationArea = AppConstants.CommunityArea
+            };
+
+            return user;
         }
 
         private IUserEmailStore<ApplicationUser> GetEmailStore()
@@ -213,5 +306,21 @@ namespace PrepSharp.Web.Areas.Identity.Pages.Account
             }
             return (IUserEmailStore<ApplicationUser>)_userStore;
         }
+
+        private async Task<bool> ValidateUserUniquenessAsync(string username)
+        {
+            var hasError = false;
+
+            var existingUsernameUser = await _userManager.FindByNameAsync(username);
+            if (existingUsernameUser != null)
+            {
+                ModelState.AddModelError("Input.Username", "Username is already taken.");
+                hasError = true;
+            }
+
+            return hasError;
+        }
     }
 }
+
+*/

@@ -1,4 +1,4 @@
-﻿namespace PrepSharp.Domain.Consts
+﻿namespace PrepSharp.Consts
 {
     public static class RegexPatterns
     {

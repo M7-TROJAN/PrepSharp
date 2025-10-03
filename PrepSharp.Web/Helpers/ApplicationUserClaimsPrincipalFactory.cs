@@ -1,5 +1,5 @@
 ﻿using Microsoft.Extensions.Options;
-using PrepSharp.Domain.Consts;
+using PrepSharp.Consts;
 using System.Security.Claims;
 
 namespace PrepSharp.Web.Helpers

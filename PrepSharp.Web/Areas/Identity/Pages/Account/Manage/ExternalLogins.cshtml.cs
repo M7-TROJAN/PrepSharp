@@ -5,6 +5,8 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using PrepSharp.Consts;
+using System.Security.Claims;
 
 namespace PrepSharp.Web.Areas.Identity.Pages.Account.Manage
 {

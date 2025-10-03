@@ -1,4 +1,4 @@
-﻿using PrepSharp.Domain.Consts;
+﻿using PrepSharp.Consts;
 
 namespace PrepSharp.Web.Seeds
 {
